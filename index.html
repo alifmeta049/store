@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alif Metal Furniture Shop — Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK v9 compat -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<style>
+:root {
+  --bg:#0f0e0d;--bg2:#1a1917;--bg3:#242320;--bg4:#2e2c29;
+  --border:#3a3835;--border2:#4a4845;
+  --text:#f0ede8;--text2:#a09c96;--text3:#6a6560;
+  --accent:#d4a853;--accent2:#e8c47a;--accent-bg:rgba(212,168,83,0.12);
+  --danger:#e05555;--danger-bg:rgba(224,85,85,0.12);
+  --success:#4caf7d;--success-bg:rgba(76,175,125,0.12);
+  --info:#5b9bd5;--info-bg:rgba(91,155,213,0.12);
+  --warn:#e09055;--warn-bg:rgba(224,144,85,0.12);
+  --radius:8px;--radius-lg:12px;--sidebar-w:220px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+h1,h2,h3,h4{font-family:'Syne',sans-serif;}
+code,.mono{font-family:'Space Mono',monospace;}
+#app{display:flex;height:100vh;overflow:hidden;}
+#sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+#content{flex:1;overflow-y:auto;padding:24px;}
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);}
+.sidebar-logo .store-name{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--accent);letter-spacing:.04em;line-height:1.3;}
+.sidebar-logo .store-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.nav-section{padding:10px 0 4px;}
+.nav-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;padding:0 16px 6px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .15s;user-select:none;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{color:var(--accent);background:var(--accent-bg);border-left-color:var(--accent);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;border-radius:10px;padding:1px 6px;}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);}
+.user-pill{display:flex;align-items:center;gap:8px;}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);}
+.user-info .user-name{font-size:12px;font-weight:600;}
+.user-info .user-role{font-size:10px;color:var(--text3);}
+.btn-logout{margin-left:auto;background:none;border:1px solid var(--border);color:var(--text3);padding:4px 8px;border-radius:var(--radius);cursor:pointer;font-size:11px;transition:all .15s;}
+.btn-logout:hover{border-color:var(--danger);color:var(--danger);}
+.page-title{font-size:16px;font-weight:700;font-family:'Syne',sans-serif;}
+.topbar-actions{display:flex;align-items:center;gap:10px;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:4px;transition:background .3s;}
+.sync-dot.syncing{background:var(--warn);animation:pulse .8s infinite;}
+.sync-dot.synced{background:var(--success);}
+.sync-dot.error{background:var(--danger);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:500;border:1px solid transparent;transition:all .15s;font-family:'Inter',sans-serif;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#111;border-color:var(--accent);}
+.btn-primary:hover:not(:disabled){background:var(--accent2);}
+.btn-secondary{background:var(--bg3);color:var(--text);border-color:var(--border);}
+.btn-secondary:hover:not(:disabled){background:var(--bg4);border-color:var(--border2);}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:var(--danger);}
+.btn-danger:hover:not(:disabled){background:var(--danger);color:#fff;}
+.btn-success{background:var(--success-bg);color:var(--success);border-color:var(--success);}
+.btn-success:hover:not(:disabled){background:var(--success);color:#fff;}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-icon{padding:6px;border-radius:var(--radius);background:var(--bg3);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;}
+.btn-icon:hover{background:var(--bg4);color:var(--text);border-color:var(--border2);}
+.btn-icon svg{width:14px;height:14px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;}
+.card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.stat-value{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--text);}
+.stat-value.accent{color:var(--accent);}
+.stat-value.success{color:var(--success);}
+.stat-value.danger{color:var(--danger);}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg3);}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-success{background:var(--success-bg);color:var(--success);}
+.badge-danger{background:var(--danger-bg);color:var(--danger);}
+.badge-warn{background:var(--warn-bg);color:var(--warn);}
+.badge-info{background:var(--info-bg);color:var(--info);}
+.badge-accent{background:var(--accent-bg);color:var(--accent);}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px;}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;transition:border-color .15s;outline:none;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);}
+.form-input::placeholder{color:var(--text3);}
+.form-select option{background:var(--bg3);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.modal-body{padding:20px;}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:2000;}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 40px;width:400px;}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo h1{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--accent);}
+.login-logo p{color:var(--text3);font-size:12px;margin-top:4px;}
+.login-error{background:var(--danger-bg);border:1px solid var(--danger);color:var(--danger);padding:8px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:12px;}
+/* Firebase setup screen */
+#firebase-setup{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:3000;}
+.setup-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 36px;width:520px;max-height:90vh;overflow-y:auto;}
+.setup-box h2{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--accent);margin-bottom:6px;}
+.setup-box p{color:var(--text3);font-size:13px;margin-bottom:20px;line-height:1.6;}
+.setup-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-text{font-size:12px;color:var(--text2);line-height:1.6;}
+.step-text a{color:var(--accent);text-decoration:none;}
+.step-text code{background:var(--bg4);padding:1px 5px;border-radius:4px;font-family:'Space Mono',monospace;font-size:11px;}
+.setup-error{background:var(--danger-bg);border:1px solid var(--danger);color:var(--danger);padding:8px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:12px;}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.page-heading{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;}
+.search-bar{display:flex;align-items:center;gap:8px;}
+.search-input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;color:var(--text);font-size:13px;outline:none;width:220px;}
+.search-input:focus{border-color:var(--accent);}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3);}
+.empty-state svg{width:36px;height:36px;margin-bottom:10px;opacity:.4;}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--text2);}
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:14px;border-left:3px solid;}
+.alert-warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn);}
+.alert-info{background:var(--info-bg);color:var(--info);border-color:var(--info);}
+.alert-success{background:var(--success-bg);color:var(--success);border-color:var(--success);}
+.section-gap{margin-top:24px;}
+.flex-between{display:flex;align-items:center;justify-content:space-between;}
+.flex-gap{display:flex;align-items:center;gap:10px;}
+.text-right{text-align:right;}
+.text-muted{color:var(--text2);}
+.text-sm{font-size:12px;}
+.fw-600{font-weight:600;}
+.color-success{color:var(--success);}
+.color-danger{color:var(--danger);}
+.color-accent{color:var(--accent);}
+.hidden{display:none!important;}
+@media print{body *{visibility:hidden;}#receipt-print,#receipt-print *{visibility:visible;}#receipt-print{position:absolute;left:0;top:0;width:300px;font-family:'Space Mono',monospace;}}
+#receipt-print{display:none;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.pos-layout{display:grid;grid-template-columns:1fr 340px;gap:18px;height:calc(100vh - 130px);}
+.pos-products{overflow-y:auto;}
+.pos-cart{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);display:flex;flex-direction:column;overflow:hidden;}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.product-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;cursor:pointer;transition:all .15s;}
+.product-card:hover{border-color:var(--accent);background:var(--bg4);}
+.product-card .p-name{font-weight:600;font-size:13px;margin-bottom:4px;}
+.product-card .p-cat{font-size:11px;color:var(--text3);margin-bottom:8px;}
+.product-card .p-price{font-family:'Space Mono',monospace;color:var(--accent);font-size:15px;font-weight:700;}
+.product-card .p-stock{font-size:11px;margin-top:4px;}
+.cart-items{flex:1;overflow-y:auto;padding:14px;}
+.cart-item{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.cart-item-name{flex:1;font-size:13px;font-weight:500;}
+.cart-item-qty{display:flex;align-items:center;gap:6px;}
+.qty-btn{width:24px;height:24px;border-radius:4px;background:var(--bg4);border:1px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.qty-btn:hover{background:var(--accent);color:#111;border-color:var(--accent);}
+.cart-item-price{font-family:'Space Mono',monospace;font-size:13px;color:var(--accent);min-width:80px;text-align:right;}
+.cart-footer{border-top:1px solid var(--border);padding:14px;}
+.cart-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+.cart-total{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--accent);}
+</style>
+</head>
+<body>
+
+<!-- FIREBASE SETUP SCREEN -->
+<div id="firebase-setup">
+  <div class="setup-box">
+    <h2>🔥 Connect to Firebase</h2>
+    <p>To make the system live with real-time sync across all devices, connect your Firebase project. Your data will be stored in Firebase Realtime Database and stay updated instantly.</p>
+
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-text">Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → create a project (e.g. <code>alif-furniture</code>)</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-text">Click <strong>Build → Realtime Database → Create database</strong> → choose a region → start in <strong>test mode</strong></div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-text">Go to <strong>Project Settings (⚙) → General</strong> → scroll to "Your apps" → click the <code>&lt;/&gt;</code> web icon → register app → copy the <code>firebaseConfig</code> values below</div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">4</div>
+      <div class="step-text">Paste each value from your config and click <strong>Connect & Launch</strong>. Config is saved locally so you only do this once.</div>
+    </div>
+
+    <div class="setup-error hidden" id="setup-error"></div>
+
+    <div class="form-row" style="margin-top:8px">
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input class="form-input" id="fb-apiKey" placeholder="AIzaSy...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Auth Domain</label>
+        <input class="form-input" id="fb-authDomain" placeholder="yourapp.firebaseapp.com">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Database URL</label>
+        <input class="form-input" id="fb-databaseURL" placeholder="https://yourapp-default-rtdb.firebaseio.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Project ID</label>
+        <input class="form-input" id="fb-projectId" placeholder="yourapp-12345">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Storage Bucket</label>
+        <input class="form-input" id="fb-storageBucket" placeholder="yourapp.appspot.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Messaging Sender ID</label>
+        <input class="form-input" id="fb-messagingSenderId" placeholder="123456789">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">App ID</label>
+      <input class="form-input" id="fb-appId" placeholder="1:123456789:web:abc123">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="connectFirebase()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Connect & Launch
+      </button>
+      <button class="btn btn-secondary" onclick="useLocalMode()" title="Use browser storage only (data not shared across devices)">
+        Use Offline (localStorage only)
+      </button>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:12px;text-align:center">Config is saved in browser localStorage. To reset, open browser console and run <code>localStorage.removeItem('alif_fb_config')</code></p>
+  </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="hidden">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>ALIF METAL FURNITURE</h1>
+      <p>Shop Management System</p>
+    </div>
+    <div id="login-error" class="login-error hidden"></div>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" id="login-user" placeholder="Enter username" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="login-pass" type="password" placeholder="Enter password" />
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="doLogin()">Sign In</button>
+    <p style="font-size:11px;color:var(--text3);margin-top:16px;text-align:center">Default — Admin: admin/admin123 &nbsp;|&nbsp; Moderator: mod/mod123</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden">
+  <div id="sidebar">
+    <div class="sidebar-logo">
+      <div class="store-name">ALIF METAL<br>FURNITURE SHOP</div>
+      <div class="store-sub">Management System</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Operations</div>
+      <div class="nav-item" onclick="navigate('pos')" id="nav-pos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Cash Register
+      </div>
+      <div class="nav-item" onclick="navigate('sales')" id="nav-sales">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9M17 13l2 9M9 21h6"/></svg>
+        Sales
+      </div>
+      <div class="nav-item" onclick="navigate('inventory')" id="nav-inventory">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Inventory
+      </div>
+      <div class="nav-item admin-only" onclick="navigate('expenses')" id="nav-expenses">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        Expenses
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Management</div>
+      <div class="nav-item admin-only" onclick="navigate('products')" id="nav-products">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Products
+      </div>
+      <div class="nav-item admin-only" onclick="navigate('customers')" id="nav-customers">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Customers
+      </div>
+      <div class="nav-item admin-only" onclick="navigate('reports')" id="nav-reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Reports
+      </div>
+      <div class="nav-item admin-only" onclick="navigate('users')" id="nav-users">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Users
+      </div>
+      <div class="nav-item admin-only" onclick="navigate('deletions')" id="nav-deletions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Deletion Requests
+        <span class="nav-badge hidden" id="deletion-badge">0</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="sidebar-avatar">A</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-username">Admin</div>
+          <div class="user-role" id="sidebar-role">Administrator</div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">Out</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="topbar">
+      <div class="page-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <span id="sync-status" style="font-size:11px;color:var(--text3);display:flex;align-items:center">
+          <span class="sync-dot" id="sync-dot"></span>
+          <span id="sync-label">Connecting...</span>
+        </span>
+        <span class="text-sm text-muted" id="topbar-date"></span>
+      </div>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal" id="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="btn-icon" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<div id="receipt-print"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  FIREBASE + DATA LAYER
+// ══════════════════════════════════════════════════
+const FB_CONFIG_KEY = 'alif_fb_config';
+const DB_LOCAL_KEY  = 'alif_furniture_v1';
+
+let DB = {};
+let currentUser = null;
+let currentPage = 'dashboard';
+let fbDB = null;          // Firebase database reference
+let fbRef = null;         // Root ref
+let isFirebaseMode = false;
+let saveTimer = null;
+
+// ── Default seed data ──────────────────────────
+function seedDefaults() {
+  if (!DB.users) DB.users = [
+    { id:'u1', username:'admin', password:'admin123', name:'Admin User', role:'admin' },
+    { id:'u2', username:'mod',   password:'mod123',   name:'Moderator',  role:'moderator' }
+  ];
+  if (!DB.products) DB.products = [
+    { id:'p1', name:'Steel Bed Frame',        category:'Beds',    cost:4500, price:7500,  stock:12, unit:'pcs' },
+    { id:'p2', name:'Metal Wardrobe 3-Door',  category:'Storage', cost:6000, price:10500, stock:8,  unit:'pcs' },
+    { id:'p3', name:'Iron Chair',             category:'Chairs',  cost:800,  price:1500,  stock:30, unit:'pcs' },
+    { id:'p4', name:'Steel Dining Table',     category:'Tables',  cost:5000, price:8500,  stock:6,  unit:'pcs' },
+    { id:'p5', name:'Metal Bookshelf',        category:'Storage', cost:2500, price:4200,  stock:15, unit:'pcs' },
+    { id:'p6', name:'Steel Cabinet',          category:'Storage', cost:3500, price:5800,  stock:10, unit:'pcs' },
+  ];
+  if (!DB.sales)            DB.sales = [];
+  if (!DB.expenses)         DB.expenses = [];
+  if (!DB.customers)        DB.customers = [];
+  if (!DB.deletionRequests) DB.deletionRequests = [];
+}
+
+// ── LOCAL fallback save/load ───────────────────
+function saveLocal() {
+  localStorage.setItem(DB_LOCAL_KEY, JSON.stringify(DB));
+}
+function loadLocal() {
+  const raw = localStorage.getItem(DB_LOCAL_KEY);
+  if (raw) { try { DB = JSON.parse(raw); } catch(e) { DB = {}; } }
+  seedDefaults();
+  saveLocal();
+}
+
+// ── FIREBASE save (debounced 400ms) ───────────
+function saveDB() {
+  if (isFirebaseMode && fbRef) {
+    setSyncStatus('syncing');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      fbRef.set(DB)
+        .then(() => setSyncStatus('synced'))
+        .catch(() => setSyncStatus('error'));
+    }, 400);
+  } else {
+    saveLocal();
+  }
+  updateDeletionBadge();
+}
+
+// ── FIREBASE real-time listener ────────────────
+function startFirebaseListener() {
+  fbRef.on('value', snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      DB = data;
+      seedDefaults();
+    } else {
+      seedDefaults();
+      fbRef.set(DB);
+    }
+    setSyncStatus('synced');
+    updateDeletionBadge();
+    // Re-render current page to reflect remote updates
+    if (currentUser && currentPage) {
+      const renders = { dashboard:renderDashboard, pos:renderPOS, sales:renderSales, inventory:renderInventory, expenses:renderExpenses, products:renderProducts, customers:renderCustomers, reports:renderReports, users:renderUsers, deletions:renderDeletions };
+      if (renders[currentPage]) {
+        // Only re-render non-POS pages silently (avoid clearing cart)
+        if (currentPage !== 'pos') {
+          document.getElementById('content').innerHTML = '';
+          renders[currentPage]();
+        }
+      }
+    }
+  }, err => {
+    console.error('Firebase read error:', err);
+    setSyncStatus('error');
+  });
+}
+
+// ── Connect Firebase ───────────────────────────
+function connectFirebase() {
+  const cfg = {
+    apiKey:            document.getElementById('fb-apiKey').value.trim(),
+    authDomain:        document.getElementById('fb-authDomain').value.trim(),
+    databaseURL:       document.getElementById('fb-databaseURL').value.trim(),
+    projectId:         document.getElementById('fb-projectId').value.trim(),
+    storageBucket:     document.getElementById('fb-storageBucket').value.trim(),
+    messagingSenderId: document.getElementById('fb-messagingSenderId').value.trim(),
+    appId:             document.getElementById('fb-appId').value.trim()
+  };
+  if (!cfg.apiKey || !cfg.databaseURL) {
+    showSetupError('API Key and Database URL are required.');
+    return;
+  }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    fbDB  = firebase.database();
+    fbRef = fbDB.ref('alif_shop');
+    isFirebaseMode = true;
+    localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
+    document.getElementById('firebase-setup').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+    setSyncStatus('syncing');
+    startFirebaseListener();
+    // Wait for first data load before enabling login
+    fbRef.once('value').then(snap => {
+      const data = snap.val();
+      if (data) { DB = data; seedDefaults(); }
+      else { seedDefaults(); fbRef.set(DB); }
+      setSyncStatus('synced');
+    });
+  } catch(e) {
+    showSetupError('Firebase error: ' + e.message);
+  }
+}
+
+function useLocalMode() {
+  isFirebaseMode = false;
+  loadLocal();
+  document.getElementById('firebase-setup').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  setSyncStatus('offline');
+}
+
+function showSetupError(msg) {
+  const el = document.getElementById('setup-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// ── Auto-load saved Firebase config ───────────
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem(FB_CONFIG_KEY);
+  if (saved) {
+    try {
+      const cfg = JSON.parse(saved);
+      // pre-fill fields
+      Object.entries(cfg).forEach(([k,v]) => {
+        const el = document.getElementById('fb-' + k);
+        if (el) el.value = v;
+      });
+      // auto-connect
+      if (!firebase.apps.length) firebase.initializeApp(cfg);
+      fbDB  = firebase.database();
+      fbRef = fbDB.ref('alif_shop');
+      isFirebaseMode = true;
+      document.getElementById('firebase-setup').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      setSyncStatus('syncing');
+      startFirebaseListener();
+      fbRef.once('value').then(snap => {
+        const data = snap.val();
+        if (data) { DB = data; seedDefaults(); }
+        else { seedDefaults(); fbRef.set(DB); }
+        setSyncStatus('synced');
+      });
+    } catch(e) {
+      localStorage.removeItem(FB_CONFIG_KEY);
+      document.getElementById('firebase-setup').classList.remove('hidden');
+    }
+  }
+  updateTopbarDate();
+});
+
+// ── Sync indicator ─────────────────────────────
+function setSyncStatus(state) {
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (!dot || !label) return;
+  dot.className   = 'sync-dot ' + state;
+  const labels = { syncing:'Saving...', synced:'Synced ✓', error:'Sync Error', offline:'Offline (local)' };
+  label.textContent = labels[state] || state;
+}
+
+// ── Helpers ────────────────────────────────────
+function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
+function fmtCurrency(n) { return '৳ ' + Number(n).toLocaleString('en-BD',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function fmtDate(iso) { if(!iso) return ''; return new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDateTime(iso) { if(!iso) return ''; return new Date(iso).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function thisMonth() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+// ══════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+  const user = DB.users.find(x => x.username===u && x.password===p);
+  if (!user) {
+    const el = document.getElementById('login-error');
+    el.textContent = 'Invalid username or password.';
+    el.classList.remove('hidden');
+    return;
+  }
+  currentUser = user;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('sidebar-avatar').textContent = user.name[0].toUpperCase();
+  document.getElementById('sidebar-username').textContent = user.name;
+  document.getElementById('sidebar-role').textContent = user.role==='admin' ? 'Administrator' : 'Moderator';
+  document.querySelectorAll('.admin-only').forEach(el => { el.style.display = user.role==='admin' ? '' : 'none'; });
+  updateTopbarDate();
+  navigate('dashboard');
+}
+
+function doLogout() {
+  currentUser = null;
+  currentPage = 'dashboard';
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const passEl = document.getElementById('login-pass');
+  if (passEl) passEl.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  const overlayEl = document.getElementById('modal-overlay');
+  if (overlayEl) overlayEl.addEventListener('click', e => { if(e.target===overlayEl) closeModal(); });
+});
+
+// ══════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════
+const PAGE_TITLES = {
+  dashboard:'Dashboard', pos:'Cash Register', sales:'Sales History',
+  inventory:'Inventory', expenses:'Expenses', products:'Products',
+  customers:'Customers', reports:'Reports', users:'User Management', deletions:'Deletion Requests'
+};
+
+function navigate(page) {
+  if (currentUser?.role !== 'admin') {
+    if (['expenses','products','customers','reports','users','deletions'].includes(page)) page = 'dashboard';
+  }
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('nav-'+page);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
+  const renders = { dashboard:renderDashboard, pos:renderPOS, sales:renderSales, inventory:renderInventory, expenses:renderExpenses, products:renderProducts, customers:renderCustomers, reports:renderReports, users:renderUsers, deletions:renderDeletions };
+  if (renders[page]) { document.getElementById('content').innerHTML = ''; renders[page](); }
+}
+
+function updateTopbarDate() {
+  const el = document.getElementById('topbar-date');
+  if (el) el.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+setInterval(updateTopbarDate, 60000);
+
+function updateDeletionBadge() {
+  const pending = (DB.deletionRequests||[]).filter(r=>r.status==='pending').length;
+  const badge = document.getElementById('deletion-badge');
+  if (badge) { badge.textContent=pending; badge.classList.toggle('hidden',pending===0); }
+}
+
+// ══════════════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════════════
+function openModal(title, body, footer) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML   = body;
+  document.getElementById('modal-footer').innerHTML = footer||'';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+// ══════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════
+function renderDashboard() {
+  const sales=DB.sales||[], expenses=DB.expenses||[], products=DB.products||[];
+  const mS=sales.filter(s=>s.date&&s.date.startsWith(thisMonth())&&s.status!=='voided');
+  const tS=sales.filter(s=>s.date&&s.date.startsWith(today())&&s.status!=='voided');
+  const mRev=mS.reduce((a,s)=>a+(s.total||0),0), tRev=tS.reduce((a,s)=>a+(s.total||0),0);
+  const mCOGS=mS.reduce((a,s)=>a+(s.cogs||0),0);
+  const mExp=expenses.filter(e=>e.date&&e.date.startsWith(thisMonth())).reduce((a,e)=>a+(e.amount||0),0);
+  const mProfit=mRev-mCOGS-mExp, lowStock=products.filter(p=>p.stock<=5);
+  const totalStock=products.reduce((a,p)=>a+(p.stock||0),0);
+  const pendingDels=(DB.deletionRequests||[]).filter(r=>r.status==='pending').length;
+  const recent=[...sales].filter(s=>s.status!=='voided').sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,6);
+  document.getElementById('content').innerHTML=`
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-label">Today's Revenue</div><div class="stat-value accent">${fmtCurrency(tRev)}</div><div class="stat-sub">${tS.length} transactions</div></div>
+      <div class="stat-card"><div class="stat-label">Monthly Revenue</div><div class="stat-value accent">${fmtCurrency(mRev)}</div><div class="stat-sub">${mS.length} sales this month</div></div>
+      <div class="stat-card"><div class="stat-label">Monthly Profit</div><div class="stat-value ${mProfit>=0?'success':'danger'}">${fmtCurrency(mProfit)}</div><div class="stat-sub">After COGS & expenses</div></div>
+      <div class="stat-card"><div class="stat-label">Monthly Expenses</div><div class="stat-value danger">${fmtCurrency(mExp)}</div><div class="stat-sub">${expenses.filter(e=>e.date&&e.date.startsWith(thisMonth())).length} entries</div></div>
+      <div class="stat-card"><div class="stat-label">Total Products</div><div class="stat-value">${products.length}</div><div class="stat-sub">${totalStock} units in stock</div></div>
+      <div class="stat-card"><div class="stat-label">Low Stock Items</div><div class="stat-value ${lowStock.length>0?'danger':'success'}">${lowStock.length}</div><div class="stat-sub">Need restocking</div></div>
+    </div>
+    ${lowStock.length>0?`<div class="alert alert-warn" style="margin-bottom:20px">⚠ Low stock: ${lowStock.map(p=>`${p.name} (${p.stock} left)`).join(', ')}</div>`:''}
+    ${pendingDels>0&&currentUser?.role==='admin'?`<div class="alert alert-info" style="margin-bottom:20px">📋 ${pendingDels} deletion request(s) awaiting — <a href="#" onclick="navigate('deletions')" style="color:var(--info)">Review</a></div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div class="card"><div class="card-title">Recent Sales</div>
+        ${recent.length===0?'<div class="empty-state">No sales yet</div>':`<div class="table-wrap"><table><thead><tr><th>Date</th><th>Items</th><th>Total</th><th>By</th></tr></thead><tbody>${recent.map(s=>`<tr><td class="text-sm text-muted">${fmtDate(s.date)}</td><td>${s.items.length}</td><td class="color-accent fw-600">${fmtCurrency(s.total)}</td><td class="text-sm text-muted">${s.createdBy||'—'}</td></tr>`).join('')}</tbody></table></div>`}
+      </div>
+      <div class="card"><div class="card-title">Inventory Overview</div>
+        <div class="table-wrap"><table><thead><tr><th>Product</th><th>Stock</th><th>Status</th></tr></thead><tbody>${products.slice(0,8).map(p=>`<tr><td>${p.name}</td><td class="fw-600">${p.stock} ${p.unit}</td><td><span class="badge ${p.stock===0?'badge-danger':p.stock<=5?'badge-warn':'badge-success'}">${p.stock===0?'Out':p.stock<=5?'Low':'OK'}</span></td></tr>`).join('')}</tbody></table></div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════
+//  POS
+// ══════════════════════════════════════════════════
+let cart=[];
+function renderPOS() {
+  cart=[];
+  const products=DB.products||[], cats=[...new Set(products.map(p=>p.category))];
+  document.getElementById('content').innerHTML=`
+    <div class="pos-layout">
+      <div class="pos-products">
+        <div class="flex-between" style="margin-bottom:14px">
+          <div class="flex-gap">
+            <input class="search-input" id="pos-search" placeholder="Search products..." oninput="filterPOSProducts()" style="width:200px">
+            <select class="form-select" id="pos-cat" onchange="filterPOSProducts()" style="width:140px">
+              <option value="">All Categories</option>${cats.map(c=>`<option>${c}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="product-grid" id="pos-product-grid">${products.map(renderProductCard).join('')}</div>
+      </div>
+      <div class="pos-cart">
+        <div style="padding:14px;border-bottom:1px solid var(--border)">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">Cart</div>
+          <select class="form-select" id="pos-customer" style="margin-top:8px;font-size:12px">
+            <option value="">Walk-in Customer</option>${(DB.customers||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="cart-items" id="cart-items"><div class="empty-state" style="padding:30px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/></svg><div>Add products to cart</div></div></div>
+        <div class="cart-footer">
+          <div class="cart-row"><span class="text-muted">Subtotal</span><span id="cart-subtotal">${fmtCurrency(0)}</span></div>
+          <div class="cart-row" style="align-items:center"><span class="text-muted">Discount</span><input type="number" id="cart-discount" min="0" value="0" style="width:80px;padding:4px 8px;background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;text-align:right" oninput="updateCartTotals()"></div>
+          <div class="cart-row"><span class="text-muted">Payment</span><select id="cart-payment" class="form-select" style="width:120px;font-size:12px"><option>Cash</option><option>bKash</option><option>Nagad</option><option>Card</option><option>Credit</option></select></div>
+          <hr class="divider">
+          <div class="cart-row"><span style="font-weight:700">TOTAL</span><span class="cart-total" id="cart-total">${fmtCurrency(0)}</span></div>
+          <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="clearCart()">Clear</button>
+            <button class="btn btn-primary btn-sm" onclick="completeSale()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Checkout</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+function renderProductCard(p) {
+  return `<div class="product-card" onclick="addToCart('${p.id}')"><div class="p-name">${p.name}</div><div class="p-cat">${p.category}</div><div class="p-price">${fmtCurrency(p.price)}</div><div class="p-stock ${p.stock<=5?'color-danger':'text-muted'}">${p.stock} ${p.unit} in stock</div></div>`;
+}
+function filterPOSProducts() {
+  const q=document.getElementById('pos-search').value.toLowerCase(), cat=document.getElementById('pos-cat').value;
+  const prods=DB.products.filter(p=>(!cat||p.category===cat)&&(!q||p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q)));
+  document.getElementById('pos-product-grid').innerHTML=prods.map(renderProductCard).join('')||'<div class="empty-state">No products found</div>';
+}
+function addToCart(pid) {
+  const p=DB.products.find(x=>x.id===pid); if(!p) return;
+  const ex=cart.find(c=>c.id===pid);
+  if(ex){if(ex.qty>=p.stock){alert('Not enough stock!');return;}ex.qty++;}
+  else{if(p.stock<1){alert('Out of stock!');return;}cart.push({id:p.id,name:p.name,price:p.price,cost:p.cost,qty:1,unit:p.unit});}
+  renderCart();
+}
+function changeQty(pid,delta) {
+  const idx=cart.findIndex(c=>c.id===pid); if(idx===-1) return;
+  cart[idx].qty+=delta; if(cart[idx].qty<=0) cart.splice(idx,1);
+  renderCart();
+}
+function renderCart() {
+  const el=document.getElementById('cart-items'); if(!el) return;
+  el.innerHTML=cart.length===0?'<div class="empty-state" style="padding:30px 0"><div>Cart is empty</div></div>':cart.map(item=>`<div class="cart-item"><div style="flex:1"><div class="cart-item-name">${item.name}</div><div class="text-sm text-muted">${fmtCurrency(item.price)} each</div></div><div class="cart-item-qty"><button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button><span style="min-width:20px;text-align:center;font-weight:600">${item.qty}</span><button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button></div><div class="cart-item-price">${fmtCurrency(item.price*item.qty)}</div></div>`).join('');
+  updateCartTotals();
+}
+function updateCartTotals() {
+  const sub=cart.reduce((a,c)=>a+c.price*c.qty,0), disc=parseFloat(document.getElementById('cart-discount')?.value||0)||0, total=Math.max(0,sub-disc);
+  const se=document.getElementById('cart-subtotal'), te=document.getElementById('cart-total');
+  if(se) se.textContent=fmtCurrency(sub); if(te) te.textContent=fmtCurrency(total);
+}
+function clearCart() { cart=[]; renderCart(); const d=document.getElementById('cart-discount'); if(d) d.value=0; }
+function completeSale() {
+  if(cart.length===0){alert('Cart is empty!');return;}
+  const disc=parseFloat(document.getElementById('cart-discount')?.value||0)||0;
+  const sub=cart.reduce((a,c)=>a+c.price*c.qty,0), total=Math.max(0,sub-disc), cogs=cart.reduce((a,c)=>a+c.cost*c.qty,0);
+  const payment=document.getElementById('cart-payment')?.value||'Cash';
+  const custId=document.getElementById('pos-customer')?.value||'';
+  const custName=custId?(DB.customers.find(c=>c.id===custId)?.name||''):'Walk-in';
+  const sale={id:genId(),date:today(),createdAt:new Date().toISOString(),items:cart.map(c=>({...c})),subtotal:sub,discount:disc,total,cogs,payment,customerId:custId,customerName:custName,createdBy:currentUser.username,status:'completed'};
+  sale.items.forEach(item=>{const p=DB.products.find(x=>x.id===item.id);if(p) p.stock=Math.max(0,p.stock-item.qty);});
+  if(payment==='Credit'&&custId){const cust=DB.customers.find(c=>c.id===custId);if(cust) cust.creditBalance=(cust.creditBalance||0)+total;}
+  if(!DB.sales) DB.sales=[];
+  DB.sales.push(sale);
+  saveDB();
+  openModal('Sale Completed!',`<div class="alert alert-success">✓ Sale recorded & synced!</div><div class="card-title" style="margin-bottom:8px">Summary</div><div class="flex-between" style="margin-bottom:6px"><span class="text-muted">Items:</span><span>${sale.items.length}</span></div><div class="flex-between" style="margin-bottom:6px"><span class="text-muted">Subtotal:</span><span>${fmtCurrency(sub)}</span></div><div class="flex-between" style="margin-bottom:6px"><span class="text-muted">Discount:</span><span>${fmtCurrency(disc)}</span></div><div class="flex-between" style="margin-bottom:6px"><span class="text-muted">Payment:</span><span>${payment}</span></div><div class="flex-between"><span style="font-weight:700">Total:</span><span class="color-accent fw-600">${fmtCurrency(total)}</span></div>`,`<button class="btn btn-secondary" onclick="closeModal()">Done</button><button class="btn btn-primary" onclick="printReceipt('${sale.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print Receipt</button>`);
+  clearCart();
+}
+
+// ══════════════════════════════════════════════════
+//  RECEIPT
+// ══════════════════════════════════════════════════
+function printReceipt(saleId) {
+  const sale=(DB.sales||[]).find(s=>s.id===saleId); if(!sale) return;
+  document.getElementById('receipt-print').innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:12px;max-width:280px;padding:12px;color:#000;background:#fff"><div style="text-align:center;border-bottom:2px dashed #000;padding-bottom:8px;margin-bottom:8px"><div style="font-size:14px;font-weight:700">ALIF METAL FURNITURE SHOP</div><div style="font-size:10px">Receipt</div><div style="font-size:10px">${fmtDateTime(sale.createdAt)}</div><div style="font-size:10px">Ref: ${sale.id.toUpperCase()}</div></div><div style="margin-bottom:8px">${sale.items.map(i=>`<div style="display:flex;justify-content:space-between"><span>${i.name}</span></div><div style="display:flex;justify-content:space-between;color:#555;font-size:11px"><span>${i.qty} x ${i.price.toLocaleString()}</span><span>${(i.qty*i.price).toLocaleString()}</span></div>`).join('')}</div><div style="border-top:1px dashed #000;padding-top:8px"><div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${sale.subtotal?.toLocaleString()}</span></div>${sale.discount>0?`<div style="display:flex;justify-content:space-between"><span>Discount</span><span>-${sale.discount.toLocaleString()}</span></div>`:''}<div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-top:4px"><span>TOTAL</span><span>BDT ${sale.total.toLocaleString()}</span></div><div style="font-size:10px;margin-top:4px">Payment: ${sale.payment}</div></div><div style="text-align:center;border-top:2px dashed #000;margin-top:8px;padding-top:8px;font-size:10px">Thank you for your purchase!<br>Visit us again.</div></div>`;
+  document.getElementById('receipt-print').style.display='block';
+  window.print();
+  setTimeout(()=>{document.getElementById('receipt-print').style.display='none';document.getElementById('receipt-print').innerHTML='';},1000);
+}
+
+// ══════════════════════════════════════════════════
+//  SALES
+// ══════════════════════════════════════════════════
+function renderSales() {
+  document.getElementById('content').innerHTML=`<div class="page-header"><div class="page-heading">Sales History</div><div class="flex-gap"><input class="search-input" id="sales-search" placeholder="Search..." oninput="filterSales()"><input type="month" class="form-input" id="sales-month" value="${thisMonth()}" onchange="filterSales()" style="width:160px"></div></div><div class="card"><div class="table-wrap"><table><thead><tr><th>Date/Time</th><th>Customer</th><th>Items</th><th>Payment</th><th>Total</th><th>By</th><th>Status</th><th>Actions</th></tr></thead><tbody id="sales-tbody"></tbody></table></div></div>`;
+  filterSales();
+}
+function filterSales() {
+  const q=(document.getElementById('sales-search')?.value||'').toLowerCase(), month=document.getElementById('sales-month')?.value||'';
+  const sales=[...(DB.sales||[])].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).filter(s=>(!month||(s.date&&s.date.startsWith(month)))&&(!q||s.customerName?.toLowerCase().includes(q)||s.id.includes(q)));
+  const tbody=document.getElementById('sales-tbody'); if(!tbody) return;
+  tbody.innerHTML=sales.length===0?'<tr><td colspan="8"><div class="empty-state">No sales found</div></td></tr>':sales.map(s=>{
+    const isPending=(DB.deletionRequests||[]).find(r=>r.saleId===s.id&&r.status==='pending');
+    return `<tr><td class="text-sm text-muted">${fmtDateTime(s.createdAt)}</td><td>${s.customerName||'Walk-in'}</td><td>${s.items.length}</td><td><span class="badge badge-info">${s.payment}</span></td><td class="color-accent fw-600">${fmtCurrency(s.total)}</td><td class="text-sm text-muted">${s.createdBy||'—'}</td><td><span class="badge ${s.status==='voided'?'badge-danger':'badge-success'}">${s.status}</span></td><td><div class="flex-gap"><button class="btn-icon" onclick="printReceipt('${s.id}')" title="Print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>${s.status!=='voided'?(currentUser?.role==='admin'?`<button class="btn btn-danger btn-sm" onclick="voidSale('${s.id}')">Void</button>`:(isPending?`<span class="badge badge-warn">Pending</span>`:`<button class="btn btn-secondary btn-sm" onclick="requestDeletion('${s.id}')">Request Void</button>`)):''}</div></td></tr>`;
+  }).join('');
+}
+function voidSale(saleId) {
+  if(!confirm('Void this sale?')) return;
+  const sale=(DB.sales||[]).find(s=>s.id===saleId); if(!sale) return;
+  sale.status='voided';
+  sale.items.forEach(item=>{const p=DB.products.find(x=>x.id===item.id);if(p) p.stock+=item.qty;});
+  saveDB(); filterSales();
+}
+function requestDeletion(saleId) {
+  const reason=prompt('Reason for deletion request:'); if(!reason) return;
+  if(!DB.deletionRequests) DB.deletionRequests=[];
+  DB.deletionRequests.push({id:genId(),saleId,type:'void_sale',status:'pending',requestedBy:currentUser.username,reason,createdAt:new Date().toISOString()});
+  saveDB(); alert('Deletion request submitted.'); filterSales();
+}
+
+// ══════════════════════════════════════════════════
+//  INVENTORY
+// ══════════════════════════════════════════════════
+function renderInventory() {
+  const products=DB.products||[];
+  document.getElementById('content').innerHTML=`<div class="page-header"><div class="page-heading">Inventory Tracking</div><input class="search-input" id="inv-search" placeholder="Search..." oninput="filterInventory()"></div><div class="stat-grid" style="margin-bottom:20px"><div class="stat-card"><div class="stat-label">Total SKUs</div><div class="stat-value">${products.length}</div></div><div class="stat-card"><div class="stat-label">Total Units</div><div class="stat-value accent">${products.reduce((a,p)=>a+p.stock,0)}</div></div><div class="stat-card"><div class="stat-label">Stock Value (Cost)</div><div class="stat-value">${fmtCurrency(products.reduce((a,p)=>a+p.stock*p.cost,0))}</div></div><div class="stat-card"><div class="stat-label">Low Stock (≤5)</div><div class="stat-value danger">${products.filter(p=>p.stock<=5).length}</div></div></div><div class="card"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Cost Price</th><th>Sale Price</th><th>Stock</th><th>Stock Value</th><th>Status</th>${currentUser?.role==='admin'?'<th>Adjust</th>':''}</tr></thead><tbody id="inv-tbody"></tbody></table></div></div>`;
+  filterInventory();
+}
+function filterInventory() {
+  const q=(document.getElementById('inv-search')?.value||'').toLowerCase();
+  const prods=DB.products.filter(p=>!q||p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q));
+  const tbody=document.getElementById('inv-tbody'); if(!tbody) return;
+  tbody.innerHTML=prods.map(p=>`<tr><td class="fw-600">${p.name}</td><td><span class="chip">${p.category}</span></td><td>${fmtCurrency(p.cost)}</td><td class="color-accent">${fmtCurrency(p.price)}</td><td class="fw-600">${p.stock} ${p.unit}</td><td>${fmtCurrency(p.stock*p.cost)}</td><td><span class="badge ${p.stock===0?'badge-danger':p.stock<=5?'badge-warn':'badge-success'}">${p.stock===0?'Out of Stock':p.stock<=5?'Low Stock':'In Stock'}</span></td>${currentUser?.role==='admin'?`<td><button class="btn btn-secondary btn-sm" onclick="adjustStock('${p.id}')">Adjust</button></td>`:''}</tr>`).join('')||'<tr><td colspan="8"><div class="empty-state">No products</div></td></tr>';
+}
+function adjustStock(pid) {
+  const p=DB.products.find(x=>x.id===pid); if(!p) return;
+  openModal(`Adjust Stock — ${p.name}`,`<div class="form-group"><label class="form-label">Current: <strong>${p.stock} ${p.unit}</strong></label></div><div class="form-group"><label class="form-label">New Quantity</label><input class="form-input" id="adj-stock" type="number" min="0" value="${p.stock}"></div><div class="form-group"><label class="form-label">Reason (optional)</label><input class="form-input" id="adj-reason" placeholder="e.g. Restocked"></div>`,`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStockAdj('${pid}')">Update</button>`);
+}
+function saveStockAdj(pid) {
+  const v=parseInt(document.getElementById('adj-stock').value); if(isNaN(v)||v<0){alert('Invalid.');return;}
+  const p=DB.products.find(x=>x.id===pid); if(p) p.stock=v;
+  saveDB(); closeModal(); filterInventory();
+}
+
+// ══════════════════════════════════════════════════
+//  EXPENSES
+// ══════════════════════════════════════════════════
+function renderExpenses() {
+  document.getElementById('content').innerHTML=`<div class="page-header"><div class="page-heading">Expenses</div><div class="flex-gap"><input type="month" class="form-input" id="exp-month" value="${thisMonth()}" onchange="filterExpenses()" style="width:160px"><button class="btn btn-primary" onclick="openAddExpense()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Expense</button></div></div><div class="stat-grid" style="margin-bottom:20px" id="exp-stats"></div><div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="exp-tbody"></tbody></table></div></div>`;
+  filterExpenses();
+}
+function filterExpenses() {
+  const month=document.getElementById('exp-month')?.value||thisMonth();
+  const exps=(DB.expenses||[]).filter(e=>e.date?.startsWith(month)).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const total=exps.reduce((a,e)=>a+(e.amount||0),0), byCat={};
+  exps.forEach(e=>{byCat[e.category]=(byCat[e.category]||0)+e.amount;});
+  const topCat=Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
+  const se=document.getElementById('exp-stats');
+  if(se) se.innerHTML=`<div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value danger">${fmtCurrency(total)}</div></div><div class="stat-card"><div class="stat-label">Entries</div><div class="stat-value">${exps.length}</div></div><div class="stat-card"><div class="stat-label">Top Category</div><div class="stat-value" style="font-size:14px">${topCat?topCat[0]:'—'}</div><div class="stat-sub">${topCat?fmtCurrency(topCat[1]):''}</div></div>`;
+  const tbody=document.getElementById('exp-tbody'); if(!tbody) return;
+  tbody.innerHTML=exps.length===0?'<tr><td colspan="5"><div class="empty-state">No expenses</div></td></tr>':exps.map(e=>`<tr><td class="text-sm text-muted">${fmtDate(e.date)}</td><td><span class="chip">${e.category}</span></td><td>${e.description}</td><td class="color-danger fw-600">${fmtCurrency(e.amount)}</td><td><button class="btn btn-danger btn-sm" onclick="deleteExpense('${e.id}')">Delete</button></td></tr>`).join('');
+}
+function openAddExpense() {
+  openModal('Add Expense',`<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input class="form-input" id="exp-date" type="date" value="${today()}"></div><div class="form-group"><label class="form-label">Amount (BDT)</label><input class="form-input" id="exp-amount" type="number" min="0"></div></div><div class="form-group"><label class="form-label">Category</label><select class="form-select" id="exp-cat"><option>Rent</option><option>Salaries</option><option>Utilities</option><option>Transport</option><option>Maintenance</option><option>Supplies</option><option>Marketing</option><option>Other</option></select></div><div class="form-group"><label class="form-label">Description</label><input class="form-input" id="exp-desc" placeholder="Brief description"></div>`,`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveExpense()">Save</button>`);
+}
+function saveExpense() {
+  const date=document.getElementById('exp-date').value, amount=parseFloat(document.getElementById('exp-amount').value), category=document.getElementById('exp-cat').value, description=document.getElementById('exp-desc').value.trim();
+  if(!date||!amount||amount<=0||!description){alert('Fill all fields.');return;}
+  if(!DB.expenses) DB.expenses=[];
+  DB.expenses.push({id:genId(),date,amount,category,description,createdBy:currentUser.username,createdAt:new Date().toISOString()});
+  saveDB(); closeModal(); filterExpenses();
+}
+function deleteExpense(eid) {
+  if(!confirm('Delete?')) return;
+  DB.expenses=DB.expenses.filter(e=>e.id!==eid);
+  saveDB(); filterExpenses();
+}
+
+// ══════════════════════════════════════════════════
+//  PRODUCTS
+// ══════════════════════════════════════════════════
+function renderProducts() {
+  document.getElementById('content').innerHTML=`<div class="page-header"><div class="page-heading">Products</div><div class="flex-gap"><input class="search-input" id="prod-search" placeholder="Search..." oninput="filterProducts()"><button class="btn btn-primary" onclick="openAddProduct()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button></div></div><div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Category</th><th>Cost</th><th>Price</th><th>Margin</th><th>Stock</th><th>Unit</th><th>Actions</th></tr></thead><tbody id="prod-tbody"></tbody></table></div></div>`;
+  filterProducts();
+}
+function filterProducts() {
+  const q=(document.getElementById('prod-search')?.value||'').toLowerCase();
+  const prods=DB.products.filter(p=>!q||p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q));
+  const tbody=document.getElementById('prod-tbody'); if(!tbody) return;
+  tbody.innerHTML=prods.map(p=>{const margin=p.price>0?Math.round((p.price-p.cost)/p.price*100):0;return `<tr><td class="fw-600">${p.name}</td><td><span class="chip">${p.category}</span></td><td>${fmtCurrency(p.cost)}</td><td class="color-accent">${fmtCurrency(p.price)}</td><td><span class="badge badge-success">${margin}%</span></td><td>${p.stock}</td><td class="text-muted">${p.unit}</td><td><div class="flex-gap"><button class="btn btn-secondary btn-sm" onclick="editProduct('${p.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button></div></td></tr>`;}).join('')||'<tr><td colspan="8"><div class="empty-state">No products</div></td></tr>';
+}
+function openAddProduct(pid) {
+  const p=pid?DB.products.find(x=>x.id===pid):null;
+  openModal(p?'Edit Product':'Add Product',`<div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="p-name" value="${p?.name||''}"></div><div class="form-row"><div class="form-group"><label class="form-label">Category</label><input class="form-input" id="p-cat" list="cat-list" value="${p?.category||''}"><datalist id="cat-list">${[...new Set((DB.products||[]).map(x=>x.category))].map(c=>`<option>${c}</option>`).join('')}</datalist></div><div class="form-group"><label class="form-label">Unit</label><input class="form-input" id="p-unit" value="${p?.unit||'pcs'}"></div></div><div class="form-row-3"><div class="form-group"><label class="form-label">Cost Price (BDT)</label><input class="form-input" id="p-cost" type="number" min="0" value="${p?.cost||''}"></div><div class="form-group"><label class="form-label">Sale Price (BDT)</label><input class="form-input" id="p-price" type="number" min="0" value="${p?.price||''}"></div><div class="form-group"><label class="form-label">Stock</label><input class="form-input" id="p-stock" type="number" min="0" value="${p?.stock||'0'}"></div></div>`,`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveProduct('${pid||''}')">Save</button>`);
+}
+function editProduct(pid){openAddProduct(pid);}
+function saveProduct(pid) {
+  const name=document.getElementById('p-name').value.trim(), category=document.getElementById('p-cat').value.trim(), unit=document.getElementById('p-unit').value.trim()||'pcs', cost=parseFloat(document.getElementById('p-cost').value), price=parseFloat(document.getElementById('p-price').value), stock=parseInt(document.getElementById('p-stock').value);
+  if(!name||!category||isNaN(cost)||isNaN(price)||isNaN(stock)){alert('Fill all fields.');return;}
+  if(pid){const p=DB.products.find(x=>x.id===pid);if(p) Object.assign(p,{name,category,unit,cost,price,stock});}
+  else{if(!DB.products) DB.products=[];DB.products.push({id:genId(),name,category,unit,cost,price,stock});}
+  saveDB(); closeModal(); filterProducts();
+}
+function deleteProduct(pid) {
+  if(!confirm('Delete product?')) return;
+  DB.products=DB.products.filter(p=>p.id!==pid);
+  saveDB(); filterProducts();
+}
+
+// ══════════════════════════════════════════════════
+//  CUSTOMERS
+// ══════════════════════════════════════════════════
+function renderCustomers() {
+  document.getElementById('content').innerHTML=`<div class="page-header"><div class="page-heading">Customer Credit Management</div><button class="btn btn-primary" onclick="openAddCustomer()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Customer</button></div><div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Address</th><th>Credit Balance</th><th>Actions</th></tr></thead><tbody id="cust-tbody"></tbody></table></div></div>`;
+  renderCustomersTable();
+}
+function renderCustomersTable() {
+  const tbody=document.getElementById('cust-tbody'); if(!tbody) return;
+  const custs=DB.customers||[];
+  tbody.innerHTML=custs.length===0?'<tr><td colspan="5"><div class="empty-state">No customers yet</div></td></tr>':custs.map(c=>`<tr><td class="fw-600">${c.name}</td><td class="text-muted">${c.phone||'—'}</td><td class="text-muted">${c.address||'—'}</td><td><span class="badge ${(c.creditBalance||0)>0?'badge-danger':'badge-success'}">${fmtCurrency(c.creditBalance||0)}</span></td><td><div class="flex-gap">${(c.creditBalance||0)>0?`<button class="btn btn-success btn-sm" onclick="recordPayment('${c.id}')">Record Payment</button>`:''}<button class="btn btn-danger btn-sm" onclick="deleteCustomer('${c.id}')">Delete</button></div></td></tr>`).join('');
+}
+function openAddCustomer() {
+  openModal('Add Customer',`<div class="form-group"><label class="form-label">Name</label><input class="form-input" id="c-name"></div><div class="form-row"><div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="c-phone"></div><div class="form-group"><label class="form-label">Address</label><input class="form-input" id="c-addr"></div></div>`,`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveCustomer()">Save</button>`);
+}
+function saveCustomer() {
+  const name=document.getElementById('c-name').value.trim(); if(!name){alert('Enter name.');return;}
+  if(!DB.customers) DB.customers=[];
+  DB.customers.push({id:genId(),name,phone:document.getElementById('c-phone').value.trim(),address:document.getElementById('c-addr').value.trim(),creditBalance:0,createdAt:new Date().toISOString()});
+  saveDB(); closeModal(); renderCustomersTable();
+}
+function deleteCustomer(cid) {
+  if(!confirm('Delete customer?')) return;
+  DB.customers=DB.customers.filter(c=>c.id!==cid);
+  saveDB(); renderCustomersTable();
+}
+function recordPayment(cid) {
+  const c=DB.customers.find(x=>x.id===cid); if(!c) return;
+  openModal(`Record Payment — ${c.name}`,`<div class="alert alert-warn">Outstanding: ${fmtCurrency(c.creditBalance||0)}</div><div class="form-group"><label class="form-label">Amount (BDT)</label><input class="form-input" id="pay-amount" type="number" min="0" value="${c.creditBalance||0}"></div><div class="form-group"><label class="form-label">Method</label><select class="form-select" id="pay-method"><option>Cash</option><option>bKash</option><option>Nagad</option><option>Card</option></select></div>`,`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-success" onclick="savePayment('${cid}')">Record</button>`);
+}
+function savePayment(cid) {
+  const amount=parseFloat(document.getElementById('pay-amount').value), c=DB.customers.find(x=>x.id===cid);
+  if(!c||isNaN(amount)||amount<=0){alert('Invalid amount.');return;}
+  c.creditBalance=Math.max(0,(c.creditBalance||0)-amount);
+  if(!DB.expenses) DB.expenses=[];
+  DB.expenses.push({id:genId(),date:today(),amount,category:'Credit Recovery',description:`Payment from ${c.name}`,createdBy:currentUser.username,createdAt:new Date().toISOString()});
+  saveDB(); closeModal(); renderCustomersTable();
+}
+
+// ══════════════════════════════════════════════════
+//  REPORTS
+// ══════════════════════════════════════════════════
+function renderReports() {
+  const sales=DB.sales||[], expenses=DB.expenses||[], month=thisMonth();
+  const mS=sales.filter(s=>s.date?.startsWith(month)&&s.status!=='voided');
+  const mRev=mS.reduce((a,s)=>a+s.total,0), mCOGS=mS.reduce((a,s)=>a+s.cogs,0);
+  const mExp=expenses.filter(e=>e.date?.startsWith(month)).reduce((a,e)=>a+e.amount,0);
+  const mProfit=mRev-mCOGS-mExp, netMargin=mRev>0?(mProfit/mRev*100).toFixed(1):0;
+  const months6=[];
+  for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label=d.toLocaleString('default',{month:'short'});const rev=sales.filter(s=>s.date?.startsWith(key)&&s.status!=='voided').reduce((a,s)=>a+s.total,0),exp=expenses.filter(e=>e.date?.startsWith(key)).reduce((a,e)=>a+e.amount,0);months6.push({key,label,rev,exp});}
+  const prodSales={};
+  mS.forEach(s=>s.items.forEach(item=>{prodSales[item.name]=(prodSales[item.name]||0)+item.qty*item.price;}));
+  const topProds=Object.entries(prodSales).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const payBreak={};mS.forEach(s=>{payBreak[s.payment]=(payBreak[s.payment]||0)+s.total;});
+  const maxRev=Math.max(...months6.map(m=>m.rev),1);
+  document.getElementById('content').innerHTML=`
+    <div class="page-header"><div class="page-heading">Monthly Reports</div></div>
+    <div class="stat-grid" style="margin-bottom:24px">
+      <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value accent">${fmtCurrency(mRev)}</div></div>
+      <div class="stat-card"><div class="stat-label">Cost of Goods</div><div class="stat-value">${fmtCurrency(mCOGS)}</div></div>
+      <div class="stat-card"><div class="stat-label">Gross Profit</div><div class="stat-value success">${fmtCurrency(mRev-mCOGS)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value danger">${fmtCurrency(mExp)}</div></div>
+      <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value ${mProfit>=0?'success':'danger'}">${fmtCurrency(mProfit)}</div></div>
+      <div class="stat-card"><div class="stat-label">Net Margin</div><div class="stat-value ${mProfit>=0?'success':'danger'}">${netMargin}%</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+      <div class="card"><div class="card-title">6-Month Revenue vs Expenses</div><div style="display:flex;flex-direction:column;gap:8px">
+        ${months6.map(m=>`<div><div class="flex-between text-sm" style="margin-bottom:3px"><span style="color:var(--text2)">${m.label}</span><span class="color-accent">${fmtCurrency(m.rev)}</span></div><div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:${(m.rev/maxRev*100).toFixed(1)}%;background:var(--accent);border-radius:3px"></div></div><div style="height:4px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:2px"><div style="height:100%;width:${(m.exp/maxRev*100).toFixed(1)}%;background:var(--danger);border-radius:3px"></div></div></div>`).join('')}
+        <div class="flex-gap text-sm" style="margin-top:4px"><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:6px;background:var(--accent);border-radius:2px;display:inline-block"></span>Revenue</span><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:4px;background:var(--danger);border-radius:2px;display:inline-block"></span>Expenses</span></div>
+      </div></div>
+      <div class="card"><div class="card-title">Top Products This Month</div>${topProds.length===0?'<div class="empty-state">No sales</div>':`<div style="display:flex;flex-direction:column;gap:10px">${topProds.map(([name,rev],i)=>`<div class="flex-between"><div><div style="font-size:13px;font-weight:600">${name}</div><div class="text-sm text-muted">#${i+1} seller</div></div><div class="color-accent fw-600">${fmtCurrency(rev)}</div></div>`).join('')}</div>`}</div>
+    </div>
+    <div class="card"><div class="card-title">Payment Method Breakdown</div><div style="display:flex;gap:12px;flex-wrap:wrap">${Object.entries(payBreak).map(([m,t])=>`<div class="stat-card" style="min-width:130px"><div class="stat-label">${m}</div><div class="stat-value" style="font-size:16px">${fmtCurrency(t)}</div><div class="stat-sub">${mRev>0?(t/mRev*100).toFixed(1):0}%</div></div>`).join('')||'<div class="text-muted text-sm">No sales this month</div>'}</div></div>`;
+}
+
+// ══════════════════════════════════════════════════
+//  USERS
+// ══════════════════════════════════════════════════
+function renderUsers() {
+  document.getElementById('content').innerHTML=`<div class="page-header"><div class="page-heading">User Management</div><button class="btn btn-primary" onclick="openAddUser()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add User</button></div><div class="alert alert-info">Admins have full access. Moderators can add sales but must request deletion approval.</div><div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Actions</th></tr></thead><tbody id="users-tbody"></tbody></table></div></div>`;
+  renderUsersTable();
+}
+function renderUsersTable() {
+  const tbody=document.getElementById('users-tbody'); if(!tbody) return;
+  tbody.innerHTML=(DB.users||[]).map(u=>`<tr><td class="fw-600">${u.name}</td><td class="mono text-muted">${u.username}</td><td><span class="badge ${u.role==='admin'?'badge-accent':'badge-info'}">${u.role}</span></td><td>${u.id!==currentUser.id?`<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Delete</button>`:'<span class="text-muted text-sm">Current user</span>'}</td></tr>`).join('');
+}
+function openAddUser() {
+  openModal('Add User',`<div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="u-name"></div><div class="form-row"><div class="form-group"><label class="form-label">Username</label><input class="form-input" id="u-username"></div><div class="form-group"><label class="form-label">Password</label><input class="form-input" id="u-password" type="password"></div></div><div class="form-group"><label class="form-label">Role</label><select class="form-select" id="u-role"><option value="moderator">Moderator</option><option value="admin">Admin</option></select></div>`,`<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveUser()">Create</button>`);
+}
+function saveUser() {
+  const name=document.getElementById('u-name').value.trim(), username=document.getElementById('u-username').value.trim(), password=document.getElementById('u-password').value.trim(), role=document.getElementById('u-role').value;
+  if(!name||!username||!password){alert('Fill all fields.');return;}
+  if((DB.users||[]).find(u=>u.username===username)){alert('Username taken.');return;}
+  if(!DB.users) DB.users=[];
+  DB.users.push({id:genId(),name,username,password,role});
+  saveDB(); closeModal(); renderUsersTable();
+}
+function deleteUser(uid) {
+  if(!confirm('Delete user?')) return;
+  DB.users=DB.users.filter(u=>u.id!==uid);
+  saveDB(); renderUsersTable();
+}
+
+// ══════════════════════════════════════════════════
+//  DELETION REQUESTS
+// ══════════════════════════════════════════════════
+function renderDeletions() {
+  const requests=(DB.deletionRequests||[]).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  document.getElementById('content').innerHTML=`<div class="page-header"><div class="page-heading">Deletion Requests</div></div>${requests.filter(r=>r.status==='pending').length===0?'<div class="alert alert-success">No pending deletion requests.</div>':''}<div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Requested By</th><th>Sale</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>${requests.length===0?'<tr><td colspan="6"><div class="empty-state">No requests</div></td></tr>':requests.map(r=>{const sale=(DB.sales||[]).find(s=>s.id===r.saleId);return `<tr><td class="text-sm text-muted">${fmtDateTime(r.createdAt)}</td><td class="fw-600">${r.requestedBy}</td><td>${sale?fmtCurrency(sale.total)+' — '+(sale.customerName||'Walk-in'):'Not found'}</td><td>${r.reason}</td><td><span class="badge ${r.status==='pending'?'badge-warn':r.status==='approved'?'badge-success':'badge-danger'}">${r.status}</span></td><td>${r.status==='pending'?`<div class="flex-gap"><button class="btn btn-success btn-sm" onclick="approveDeletion('${r.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectDeletion('${r.id}')">Reject</button></div>`:`<span class="text-muted text-sm">${r.resolvedBy||''}</span>`}</td></tr>`;}).join('')}</tbody></table></div></div>`;
+}
+function approveDeletion(rid) {
+  const r=(DB.deletionRequests||[]).find(x=>x.id===rid); if(!r) return;
+  const sale=(DB.sales||[]).find(s=>s.id===r.saleId);
+  if(sale){sale.status='voided';sale.items.forEach(item=>{const p=DB.products.find(x=>x.id===item.id);if(p) p.stock+=item.qty;});}
+  Object.assign(r,{status:'approved',resolvedBy:currentUser.username,resolvedAt:new Date().toISOString()});
+  saveDB(); renderDeletions();
+}
+function rejectDeletion(rid) {
+  const r=(DB.deletionRequests||[]).find(x=>x.id===rid); if(!r) return;
+  Object.assign(r,{status:'rejected',resolvedBy:currentUser.username,resolvedAt:new Date().toISOString()});
+  saveDB(); renderDeletions();
+}
+</script>
+</body>
+</html>
